@@ -30,7 +30,7 @@
 
 ## 🌐 토폴로지
 
-![Topology](./topology/topology-ver1.png)
+![Topology](./topology/topology.png)
 
 ```text
         Lo100 100.10.1.0/24                                              Lo200 200.20.2.0/24
