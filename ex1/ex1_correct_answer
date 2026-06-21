@@ -1,0 +1,196 @@
+# ✅ EX1 검증 — L2 EtherChannel (PAgP / LACP)
+
+> **결과 요약** — Po12(PAgP), Po23(LACP) 모두 `SU` 상태로 정상 번들링 완료. 802.1Q Trunk 정상.
+
+---
+
+## SW1 (PAgP / Po12)
+
+### show etherchannel summary
+```text
+Number of channel-groups in use: 1
+Number of aggregators:           1
+
+Group  Port-channel  Protocol    Ports
+------+-------------+-----------+-----------------------------------------------
+12     Po12(SU)        PAgP      Gi3/2(P)    Gi3/3(P)
+```
+✅ `Po12(SU)` + 멤버 `Gi3/2(P) Gi3/3(P)` → Layer2 / in-use / bundled
+
+### show etherchannel 12 port-channel
+```text
+Port-channel: Po12
+Number of ports = 2
+Port state          = Port-channel Ag-Inuse
+Protocol            =   PAgP
+
+Index   Load   Port     EC state        No of bits
+------+------+------+------------------+-----------
+  0     00     Gi3/2    Desirable-Sl       0
+  0     00     Gi3/3    Desirable-Sl       0
+```
+✅ 두 포트 모두 `Desirable-Sl` (PAgP desirable)
+
+### show etherchannel 12 detail
+```text
+Group state = L2
+Ports: 2   Maxports = 4
+Protocol:   PAgP
+
+Port: Gi3/2
+Port state    = Up Mstr In-Bndl
+Channel group = 12          Mode = Desirable-Sl
+```
+✅ `Group state = L2`, `In-Bndl` (번들 포함)
+
+### show interfaces trunk
+```text
+Port        Mode             Encapsulation  Status        Native vlan
+Po12        on               802.1q         trunking      1
+```
+✅ `802.1q` / `trunking`
+
+### show interfaces port-channel 12 switchport
+```text
+Name: Po12
+Switchport: Enabled
+Administrative Mode: trunk
+Operational Mode: trunk
+Operational Trunking Encapsulation: dot1q
+```
+✅ Operational Mode: trunk / dot1q
+
+### show pagp neighbor
+```text
+Channel group 12 neighbors
+Port      Name      Device ID        Port       Age  Flags   Cap.
+Gi3/2     SW2       0c9e.d8d3.8000   Gi3/2       19s SC      C0001
+Gi3/3     SW2       0c9e.d8d3.8000   Gi3/3       20s SC      C0001
+```
+✅ Partner = **SW2** 양 포트 모두 인식 (Flags `SC` = Slow / Consistent)
+
+---
+
+## SW2 (PAgP Po12 + LACP Po23)
+
+### show etherchannel summary
+```text
+Number of channel-groups in use: 2
+Number of aggregators:           2
+
+Group  Port-channel  Protocol    Ports
+------+-------------+-----------+-----------------------------------------------
+12     Po12(SU)        PAgP      Gi3/2(P)    Gi3/3(P)
+23     Po23(SU)        LACP      Gi3/0(P)    Gi3/1(P)
+```
+✅ Po12(SU/PAgP) + Po23(SU/LACP) 동시 정상 — SW2가 양쪽 허브 역할
+
+### show etherchannel 12 port-channel
+```text
+Port-channel: Po12
+Number of ports = 2
+Protocol            =   PAgP
+  0     00     Gi3/2    Desirable-Sl       0
+  0     00     Gi3/3    Desirable-Sl       0
+```
+✅ PAgP desirable 정상
+
+### show etherchannel 23 port-channel
+```text
+Port-channel: Po23    (Primary Aggregator)
+Number of ports = 2
+Protocol            =   LACP
+  0     00     Gi3/0    Active             0
+  0     00     Gi3/1    Active             0
+```
+✅ LACP `Active` 정상
+
+### show interfaces trunk
+```text
+Port        Mode             Encapsulation  Status        Native vlan
+Po12        on               802.1q         trunking      1
+Po23        on               802.1q         trunking      1
+```
+✅ Po12 / Po23 모두 802.1q trunking
+
+### show pagp neighbor
+```text
+Channel group 12 neighbors
+Gi3/2     SW1       0ca8.ed70.8000   Gi3/2        4s SC      C0001
+Gi3/3     SW1       0ca8.ed70.8000   Gi3/3        5s SC      C0001
+```
+✅ Partner = **SW1**
+
+### show lacp neighbor
+```text
+Channel group 23 neighbors
+Port      Flags   Priority  Dev ID          Age    Oper Key
+Gi3/0     SA      32768     0ccd.929a.8000   8s    0x17
+Gi3/1     SA      32768     0ccd.929a.8000   9s    0x17
+```
+✅ Partner(SW3) 인식, Flags `SA` = Slow / Active
+
+---
+
+## SW3 (LACP / Po23)
+
+### show etherchannel summary
+```text
+Number of channel-groups in use: 1
+Number of aggregators:           1
+
+Group  Port-channel  Protocol    Ports
+------+-------------+-----------+-----------------------------------------------
+23     Po23(SU)        LACP      Gi3/0(P)    Gi3/1(P)
+```
+✅ `Po23(SU)` + `Gi3/0(P) Gi3/1(P)`
+
+### show etherchannel 23 port-channel
+```text
+Port-channel: Po23    (Primary Aggregator)
+Number of ports = 2
+Protocol            =   LACP
+  0     00     Gi3/0    Active             0
+  0     00     Gi3/1    Active             0
+```
+✅ LACP Active 정상
+
+### show interfaces trunk
+```text
+Port        Mode             Encapsulation  Status        Native vlan
+Po23        on               802.1q         trunking      1
+```
+✅ 802.1q trunking
+
+### show lacp neighbor
+```text
+Channel group 23 neighbors
+Gi3/0     SA      32768     0c9e.d8d3.8000  13s    0x17
+Gi3/1     SA      32768     0c9e.d8d3.8000   8s    0x17
+```
+✅ Partner = **SW2** (Dev ID 0c9e.d8d3.8000)
+
+### show lacp 23 internal
+```text
+Channel group 23
+Port      Flags   State     Oper Key   Port State
+Gi3/0     SA      bndl      0x17       0x3D
+Gi3/1     SA      bndl      0x17       0x3D
+```
+✅ 두 포트 모두 `bndl` (bundled)
+
+---
+
+## 🎯 합격 기준 체크
+
+| 항목 | 기준 | 결과 |
+| --- | --- | --- |
+| Po12 상태 | `SU` (Layer2 / in use) | ✅ |
+| Po23 상태 | `SU` (Layer2 / in use) | ✅ |
+| 멤버 포트 번들 | 모든 멤버 `(P)` / `bndl` | ✅ |
+| Trunk Encapsulation | `802.1q` | ✅ |
+| PAgP 모드 | desirable ↔ desirable (SW1↔SW2) | ✅ |
+| LACP 모드 | active ↔ active (SW2↔SW3) | ✅ |
+| Neighbor 인식 | SW1↔SW2(PAgP), SW2↔SW3(LACP) | ✅ |
+
+> **EX1 PASS** ✅ — PAgP(SW1↔SW2)·LACP(SW2↔SW3) EtherChannel + 802.1Q Trunk 모두 정상 동작
