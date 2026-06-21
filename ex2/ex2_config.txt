@@ -1,0 +1,63 @@
+! =====================================================================
+! EX2) VTP / STP Root-Bridge 구성
+!  - SW1 = VTP Server (+ Root-Bridge), SW2/SW3 = VTP Client
+!  - VTP Domain = ccnp , Password = cisco1234
+!  - VLAN 100 (CISCO_CCNA) / VLAN 200 (CISCO_CCNP) / VLAN 130
+! =====================================================================
+
+! ========================= SW1 (Server / Root) =========================
+en
+conf t
+!
+ip routing
+!
+vlan 100
+ name CISCO_CCNA
+!
+vlan 200
+ name CISCO_CCNP
+!
+vlan 130
+!
+int vlan 100
+ ip address 13.13.100.254 255.255.255.0
+!
+int vlan 200
+ ip address 13.13.200.254 255.255.255.0
+!
+int vlan 130
+ ip address 13.13.30.1 255.255.255.0
+!
+vtp domain ccnp
+vtp mode server
+vtp password cisco1234
+!
+spanning-tree vlan 1-4094 root primary
+!
+end
+wr
+!
+
+! ========================= SW2 (Client) =========================
+en
+conf t
+!
+vtp domain ccnp
+vtp mode client
+vtp password cisco1234
+!
+end
+wr
+!
+
+! ========================= SW3 (Client) =========================
+en
+conf t
+!
+vtp domain ccnp
+vtp mode client
+vtp password cisco1234
+!
+end
+wr
+!
