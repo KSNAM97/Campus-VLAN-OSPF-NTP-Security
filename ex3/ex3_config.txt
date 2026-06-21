@@ -1,0 +1,47 @@
+! =====================================================================
+! EX3) VLAN Access / PortFast 구성
+!  - SW1·SW3 GigaEthernet에 VLAN 100 / VLAN 200 Access
+!  - PC 연결 포트는 지연 없이 즉시 Forwarding (PortFast)
+! =====================================================================
+
+! ========================= SW1 =========================
+en
+conf t
+!
+int range gi0/0 - 1
+ switchport mode access
+ switchport access vlan 100
+ no shutdown
+!
+int range gi0/2 - 3
+ switchport mode access
+ switchport access vlan 200
+ no shutdown
+!
+int range gi0/0 - 3
+ spanning-tree portfast
+!
+end
+wr
+!
+
+! ========================= SW3 =========================
+en
+conf t
+!
+int range gi0/0 - 1
+ switchport mode access
+ switchport access vlan 100
+ no shutdown
+!
+int range gi0/2 - 3
+ switchport mode access
+ switchport access vlan 200
+ no shutdown
+!
+int range gi0/0 - 3
+ spanning-tree portfast
+!
+end
+wr
+!
