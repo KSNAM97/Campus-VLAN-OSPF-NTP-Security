@@ -1,0 +1,80 @@
+! =====================================================================
+! EX7) NTP 구성 (인증)
+!  - EX7-1) R2 = NTP Master(stratum 2) , 시간 설정
+!  - EX7-2) R1 / SW1 / SW2 = NTP Client (R2 동기화) , Client = Stratum 3
+!  - 인증키 1 / md5 cisco1234
+! =====================================================================
+
+! ===== EX7-1) R2 (NTP Master) =====
+en
+!
+clock set 20:55:00 16 jun 2026
+!
+conf t
+!
+clock timezone KST 9
+!
+ntp authenticate
+ntp authentication-key 1 md5 cisco1234
+ntp trusted-key 1
+!
+ntp master 2
+!
+end
+wr
+!
+
+! ===== EX7-2) R1 (NTP Client) =====
+en
+conf t
+!
+clock timezone KST 9
+!
+ntp authenticate
+ntp authentication-key 1 md5 cisco1234
+ntp trusted-key 1
+!
+ntp server 121.160.20.2 key 1
+!
+end
+wr
+!
+
+! ===== EX7-2) SW1 (NTP Client) =====
+en
+conf t
+!
+clock timezone KST 9
+!
+ntp authenticate
+ntp authentication-key 1 md5 cisco1234
+ntp trusted-key 1
+!
+ntp server 121.160.20.2 key 1
+!
+end
+wr
+!
+
+! ===== EX7-2) SW2 (NTP Client) =====
+! SW2는 L2 스위치이므로 VLAN130 SVI + default-gateway 로 R2 도달
+en
+conf t
+!
+int vlan 130
+ ip address 13.13.30.3 255.255.255.0
+ no shutdown
+!
+ip default-gateway 13.13.30.1
+!
+clock timezone KST 9
+!
+ntp authenticate
+ntp authentication-key 1 md5 cisco1234
+ntp trusted-key 1
+!
+ntp server 121.160.20.2 key 1
+!
+end
+wr
+!
